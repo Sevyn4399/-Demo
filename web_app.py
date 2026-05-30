@@ -3,6 +3,7 @@ from __future__ import annotations
 import html
 import json
 import math
+import os
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -13,7 +14,7 @@ from urllib.parse import parse_qs, urlparse
 
 
 HOST = "0.0.0.0"
-PORT = 8765
+PORT = int(os.environ.get("PORT", 8765))
 
 
 LEGAL_KEYWORDS = {
@@ -692,11 +693,15 @@ class Handler(BaseHTTPRequestHandler):
         self._send(status, json.dumps(data, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
 
     def do_GET(self) -> None:
-        path = urlparse(self.path).path
-        if path == "/":
-            self._send(200, INDEX_HTML.encode("utf-8"), "text/html; charset=utf-8")
-        else:
-            self._json({"error": "not found"}, 404)
+    path = urlparse(self.path).path
+
+    if path in ["/", "/index.html"]:
+        self._send(200, INDEX_HTML.encode("utf-8"), "text/html; charset=utf-8")
+    elif path == "/favicon.ico":
+        self._send(204, b"", "image/x-icon")
+    else:
+        self._send(200, INDEX_HTML.encode("utf-8"), "text/html; charset=utf-8")
+        
 
     def do_POST(self) -> None:
         length = int(self.headers.get("Content-Length", "0"))
